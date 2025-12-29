@@ -101,8 +101,10 @@ function warehouse(_address) {
     if (!_address) {
         return;
     }
-    if (_address.includes("晶城") || _address.includes("万江") || _address.includes("东莞")) {
+    if (_address.includes("东莞")) {
         return '自家仓库';
+    } if (_address.includes("深圳")) {
+        return '洁红家';
     } else if (_address.includes("山门大道700号") || (_address.includes("广州") && _address.includes("化龙镇"))) {
         return '广州700'
     } else if (_address.includes("广兴路9999号") || (_address.includes("广州") && _address.includes("南沙"))) {
