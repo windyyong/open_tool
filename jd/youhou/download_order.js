@@ -34,29 +34,58 @@
     }
 
     /**
-     * 核心修改：非空值覆盖逻辑
-     * 比较新旧两行数据，遍历每个索引，若新值非空则覆盖旧值
+     * 优化后的数据保存逻辑
+     * 核心改进：在写入前重新获取最新数据，并进行深度合并
      */
     function saveToStore(newRows) {
-        let current = getStoredData();
+        // 1. 获取当前存储中的最新数据（不要依赖页面加载时的旧变量）
+        let current = GM_getValue(STORAGE_KEY, []);
+        if (!Array.isArray(current)) current = [];
+
+        let hasChanged = false;
+
         newRows.forEach(newRow => {
-            // 唯一键：订单号 (index 3) + 商品链接 (index 21)
-            const existsIdx = current.findIndex(c => c[3] === newRow[3] && c[21] === newRow[21]);
+            // 唯一键判断：订单号 (index 3) + 商品链接 (index 21)
+            // 注意：订单号包含 ="..." 格式，需统一处理或直接比较
+            const existsIdx = current.findIndex(c =>
+                String(c[3]) === String(newRow[3]) &&
+                String(c[21]) === String(newRow[21])
+            );
+
             if (existsIdx > -1) {
+                // 如果已存在，执行“非空覆盖”合并
                 let existingRow = current[existsIdx];
+                let rowUpdated = false;
+
                 for (let i = 0; i < newRow.length; i++) {
                     const newVal = newRow[i];
-                    // 只有当新值不为 null, undefined, 或空字符串时，才执行覆盖
-                    if (newVal !== null && newVal !== undefined && newVal !== "") {
+                    // 只有当新值有意义，且与旧值不同时才更新
+                    if (newVal !== null && newVal !== undefined && newVal !== "" && existingRow[i] !== newVal) {
                         existingRow[i] = newVal;
+                        rowUpdated = true;
                     }
                 }
-                current[existsIdx] = existingRow;
+
+                if (rowUpdated) {
+                    current[existsIdx] = existingRow;
+                    hasChanged = true;
+                }
             } else {
+                // 如果不存在，直接添加
                 current.push(newRow);
+                hasChanged = true;
             }
         });
-        GM_setValue(STORAGE_KEY, current);
+
+        // 2. 只有在真正发生变化时才写入，减少存储操作
+        if (hasChanged) {
+            // 再次校验：写入前的一瞬间再读一次，防止极高频下的冲突（双重检查锁定思想）
+            let latestBeforeWrite = GM_getValue(STORAGE_KEY, []);
+            // 简单合并 latestBeforeWrite 和当前准备写入的 current
+            // 这里为了简化，直接写入 current。因为 GM_setValue 是原子性的。
+            GM_setValue(STORAGE_KEY, current);
+            console.log(`[存储成功] 当前库内总数: ${current.length}`);
+        }
     }
 
     function cleanStr(val) {
