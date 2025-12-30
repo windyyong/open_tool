@@ -15,6 +15,6 @@
 // @grant        GM_setClipboard
 // @license      MIT
 // @require      https://cdn.jsdelivr.net/gh/windyyong/open_tool@main/youhou/common/tampermonkey_common.js
-// @require      https://cdn.jsdelivr.net/gh/windyyong/open_tool@main/jd/youhou/download_order.js
+// @require      https://cdn.jsdelivr.net/gh/windyyong/open_tool@main/taobao/youhou/download_order.js
 //
 // ==/UserScript==
