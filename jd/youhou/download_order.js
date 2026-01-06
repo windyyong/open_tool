@@ -36,6 +36,19 @@
         return Array.isArray(data) ? data : [];
     }
 
+    function getSortStoredData() {
+        let data = getStoredData();
+        if (data.length > 0) {
+            data.sort((a, b) => {
+                const dateA = new Date(a[0]);
+                const dateB = new Date(b[0]);
+                return dateB - dateA; // 降序排序
+            });
+            GM_setValue(STORAGE_KEY, data);
+        }
+        return data;
+    }
+
     /**
      * 优化后的数据保存逻辑
      * 核心改进：在写入前重新获取最新数据，并进行深度合并
@@ -372,7 +385,7 @@
 
 
             container.appendChild(createBtn('📥 导出 Excel (CSV)', '#28a745', () => {
-                const data = getStoredData();
+                const data = getSortStoredData();
                 const csvContent = [CSV_HEADERS, ...data].map(r => r.join(",")).join("\n");
                 const blob = new Blob(['\uFEFF' + csvContent], {type: 'text/csv;charset=utf-8;'});
                 const a = document.createElement('a');
