@@ -50,17 +50,43 @@ window.addEventListener('load', function () {
     }
 }, false);
 
-// &route_to=tm1 参数，显示的页面不一致
+/**
+ * 规范化 URL 中的 route_to 参数
+ * 逻辑：如果存在 route_to=tm2 则替换为 tm1；如果不存在 route_to 则添加 tm1；
+ * 如果已经是 tm1 则不操作，避免无限刷新。
+ * @param {string} _url 待处理的 URL 字符串
+ */
 function urlAddRouteTo(_url) {
-    if (_url.indexOf('&route_to=tm1') === -1) {
-        let currentUrl = _url;
-        if (currentUrl.indexOf('?') === -1) {
-            currentUrl = currentUrl + '?route_to=tm1';
-        } else {
-            currentUrl = currentUrl + '&route_to=tm1';
+    try {
+        // 使用 URL 构造函数处理，自动处理 ? 和 & 的逻辑
+        const urlObj = new URL(_url, window.location.origin);
+        const params = urlObj.searchParams;
+        const currentRoute = params.get('route_to');
+
+        // 如果已经是 tm1，直接返回，不执行跳转逻辑
+        if (currentRoute === 'tm1') {
+            return;
         }
-        // 进行页面跳转
-        window.location.href = currentUrl;
+
+        // 无论原来是 tm2 还是不存在，统一设置为 tm1
+        params.set('route_to', 'tm1');
+
+        // 构建最终 URL（保留 hash 等信息）
+        const finalUrl = urlObj.toString();
+
+        // 执行跳转
+        window.location.href = finalUrl;
+    } catch (e) {
+        console.error("URL 解析失败:", e);
+
+        // 兜底方案：如果 URL 构造函数失败（如非法字符串），执行简单的字符串逻辑
+        let fallbackUrl = _url;
+        if (fallbackUrl.includes('route_to=tm2')) {
+            fallbackUrl = fallbackUrl.replace('route_to=tm2', 'route_to=tm1');
+        } else if (!fallbackUrl.includes('route_to=tm1')) {
+            fallbackUrl += (fallbackUrl.indexOf('?') === -1 ? '?' : '&') + 'route_to=tm1';
+        }
+        window.location.href = fallbackUrl;
     }
 }
 
