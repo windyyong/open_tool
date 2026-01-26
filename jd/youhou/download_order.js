@@ -383,7 +383,6 @@
                 });
             }));
 
-
             container.appendChild(createBtn('📥 导出 Excel (CSV)', '#28a745', () => {
                 const data = getSortStoredData();
                 const csvContent = [CSV_HEADERS, ...data].map(r => r.join(",")).join("\n");
@@ -440,7 +439,7 @@
         // --- 核心逻辑：初评 ---
         async function doStandardEvaluate() {
             const orderMain = document.getElementById("main");
-            const orderItems = orderMain.querySelectorAll(".com-item");
+            const orderItems = orderMain.querySelectorAll(".mycomment-table tbody");
             console.log(`【京东助手】开始初评处理，共 ${orderItems.length} 个订单项`);
 
             for (let i = 0; i < orderItems.length; i++) {

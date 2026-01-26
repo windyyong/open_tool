@@ -7,6 +7,7 @@
 // @match        *://order.jd.com/center/list.action*
 // @match        *://details.jd.com/normal/item.action*
 // @match        *://order.jd.com/center/item.action*
+// @match        *://club.jd.com/myJdcomments/*
 // @grant        GM_setClipboard
 // @grant        window.closev
 // @grant        GM_setValue
