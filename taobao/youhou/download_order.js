@@ -77,7 +77,7 @@ function urlAddRouteTo(_url) {
     console.log("1规范化后的 URL:", finalUrl);
 
     // 执行跳转
-    // window.location.href = finalUrl;
+    window.location.href = finalUrl;
   } catch (e) {
     console.error("URL 解析失败:", e);
 
@@ -91,7 +91,7 @@ function urlAddRouteTo(_url) {
     }
     // 打印最终 URL（调试用）
     console.log("2规范化后的 URL:", fallbackUrl);
-    // window.location.href = fallbackUrl;
+    window.location.href = fallbackUrl;
   }
 }
 
