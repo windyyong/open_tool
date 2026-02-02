@@ -170,7 +170,10 @@
                 const shopName = document.querySelector(".shop-name")?.innerText.trim() || "京东自营";
                 const orderStatus = document.querySelector(".state-txt")?.innerText.trim() || "";
                 const orderLink = window.location.href;
-                const addressInfo = document.querySelector(".address-info .user-info, .dl:nth-child(2) .info-rcol")?.innerText.trim() || "";
+                var addressInfo = document.querySelector(".address-info .user-info, .dl:nth-child(2) .info-rcol")?.innerText.trim() || "";
+                if (isEmpty(addressInfo)){
+                    addressInfo = document.querySelector(".ui-switchable-panel-main .ui-switchable-panel .dl:nth-child(1) .item:nth-child(2) .info-rcol")?.innerText.trim() || "";
+                }
 
                 // 2. 提取实付款 (根据你提供的 HTML 结构)
                 const totalActualPaid = parseFloat(document.querySelector(".goods-total .count")?.innerText.replace(/[^\d.]/g, '') || "0");
