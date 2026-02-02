@@ -186,6 +186,8 @@
 
                     const pName = pNameElement.innerText.trim();
                     const pLink = pNameElement.href;
+                    //处理链接：去掉参数 (?) 和 锚点 (#)
+                    const cleanLink = pLink.split(/[?#]/)[0];
                     const pSku = tr.querySelector(".p-extra span")?.innerText;
 
                     // 数量在第5个td (根据你的 HTML 结构)
