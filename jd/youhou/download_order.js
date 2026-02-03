@@ -189,7 +189,7 @@
           if (!pNameElement) return;
 
           const pName = pNameElement.innerText.trim();
-          const pLink = cleanLink(pNameElement.href);
+          const pLink = cleanUrl(pNameElement.href);
           const pSku = tr.querySelector(".p-extra span")?.innerText;
 
           // 数量在第5个td (根据你的 HTML 结构)
