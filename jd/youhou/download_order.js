@@ -189,9 +189,7 @@
           if (!pNameElement) return;
 
           const pName = pNameElement.innerText.trim();
-          const pLink = pNameElement.href;
-          //处理链接：去掉参数 (?) 和 锚点 (#)
-          const cleanLink = pLink.split(/[?#]/)[0];
+          const pLink = cleanLink(pNameElement.href);
           const pSku = tr.querySelector(".p-extra span")?.innerText;
 
           // 数量在第5个td (根据你的 HTML 结构)
@@ -310,7 +308,7 @@
           const pNameElem = row.querySelector(".p-name a");
           if (!pNameElem) return;
           const pCount = parseInt(row.querySelector(".goods-number")?.innerText.replace('x', '') || "1");
-          pTemp.push({name : pNameElem.innerText.trim(), link : pNameElem.href, count : pCount});
+          pTemp.push({name : pNameElem.innerText.trim(), link : cleanStr(pNameElem.href), count : pCount});
           totalQty += pCount;
         });
 
