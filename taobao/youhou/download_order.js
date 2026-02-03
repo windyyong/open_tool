@@ -992,9 +992,9 @@ function sourceName(_nickName) {
     return "洁红淘宝";
   } else if (_nickName.includes("fashion_suhj")) {
     return "淘宝2";
-  } else if (_nickName.includes("13148790385")) {
+  } else if (_nickName.includes("17324472089")) {
     return "淘宝3";
-  } else if (_nickName.includes("13642818462")) {
+  } else if (_nickName.includes("tabao4windy")) {
     return "淘宝4";
   } else if (_nickName.includes("lingyu100")) {
     return "洁莹淘宝";
