@@ -63,10 +63,20 @@
     newRows.forEach(newRow => {
       // 唯一键判断：订单号 (index 3) + 商品链接 (index 21)
       // 注意：订单号包含 ="..." 格式，需统一处理或直接比较
-      const existsIdx = current.findIndex(c =>
-        String(c[3]) === String(newRow[3]) &&
-        String(c[21]) === String(newRow[21])
-      );
+      const ORDER_ID_IDX = 3;    // 订单号索引
+      const PRODUCT_URL_IDX = 21; // 商品链接索引
+      const existsIdx = current.findIndex(c => {
+        // 基础校验：确保行数据存在且长度足够
+        if (!c || !newRow || c.length <= PRODUCT_URL_IDX || newRow.length <= PRODUCT_URL_IDX) {return false;}
+        // 获取并预处理数据
+        // 使用 String() 确保类型安全，trim() 去除首尾空格
+        const currentOrderId = String(c[ORDER_ID_IDX] || "").trim();
+        const newOrderId = String(newRow[ORDER_ID_IDX] || "").trim();
+        const currentUrl = String(c[PRODUCT_URL_IDX] || "").trim();
+        const newUrl = String(newRow[PRODUCT_URL_IDX] || "").trim();
+        // 执行严格相等比对
+        return currentOrderId === newOrderId && currentUrl === newUrl;
+      });
 
       if (existsIdx > -1) {
         // 如果已存在，执行“非空覆盖”合并
@@ -174,7 +184,6 @@
         if (isEmpty(addressInfo)) {
           addressInfo = document.querySelector(".ui-switchable-panel-main .ui-switchable-panel .dl:nth-child(1) .item:nth-child(2) .info-rcol:nth-child(1)")?.innerText.trim() || "";
         }
-        console.log(addressInfo)
 
         // 2. 提取实付款 (根据你提供的 HTML 结构)
         const totalActualPaid = parseFloat(document.querySelector(".goods-total .count")?.innerText.replace(/[^\d.]/g, '') || "0");
@@ -218,7 +227,7 @@
           const sizeRaw = nameParts[nameParts.length - 1] || "";
           const size = sizeRaw.replace(/[()（）]/g, "");
           // 仓库逻辑
-          const wh = (typeof warehouse === 'function') ? warehouse(addressInfo) : "默认仓库";
+          const wh = (typeof warehouse === 'function') ? warehouse(addressInfo) : "自家仓库";
           // 物流信息（假设你有 extractLogistics 函数）
           const logi = (typeof extractLogistics === 'function') ? extractLogistics() : {sn : "", company : ""};
 
@@ -277,7 +286,7 @@
 
         // 核心修复：获取第一个 a 标签作为店铺名
         const shopContainer = tbody.querySelector(".order-shop");
-        let shopName = "京东自营";
+        var shopName = "京东自营";
         if (shopContainer) {
           const firstLink = shopContainer.querySelector("a");
           if (firstLink) {
@@ -288,10 +297,11 @@
           if (backupLink) shopName = backupLink.getAttribute("title") || backupLink.innerText.trim();
         }
 
+        
         const totalAmount = parseFloat(tbody.querySelector(".amount span")?.innerText.replace(/[^\d.]/g, '') || "0");
         const orderStatus = tbody.querySelector(".order-status")?.innerText.trim() || "";
         const orderLink = tbody.querySelector(".status a[href*='details.jd.com']")?.href || "";
-        const addrBox = tbody.querySelector(".consignee .prompt-01 .pc");
+        const addrBox = tbody.querySelector(".consignee .prompt-01 .pc .detailedAddress");
         const addrPreview = addrBox ? addrBox.innerText.replace(/\n/g, ' ') : "";
 
         let warehouseName = "自家仓库";
@@ -308,7 +318,7 @@
           const pNameElem = row.querySelector(".p-name a");
           if (!pNameElem) return;
           const pCount = parseInt(row.querySelector(".goods-number")?.innerText.replace('x', '') || "1");
-          pTemp.push({name : pNameElem.innerText.trim(), link : cleanStr(pNameElem.href), count : pCount});
+          pTemp.push({name : pNameElem.innerText.trim(), link : cleanUrl(pNameElem.href), count : pCount});
           totalQty += pCount;
         });
 
