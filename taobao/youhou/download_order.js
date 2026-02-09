@@ -738,8 +738,8 @@ function extractTmallOrderDetailData(_rawOrder) {
   var actualFee = toMoney(order.actualFee);
   var shoppingGoldFee = toMoney((((_rawOrder?.amount?.count?.[0]?.find(content => content?.content?.[0]?.data?.titleLink?.text?.includes("购物金"))) || {})?.content?.[0]?.data?.money?.text)?.replace('￥', '') || 0);
   actualFee = actualFee - shoppingGoldFee;
-  var redEnvelopeFee = toMoney((((_rawOrder?.amount?.count?.[0]?.find(content => content?.content?.[0]?.data?.titleLink?.text?.includes("红包"))) || {})?.content?.[0]?.data?.money?.text)?.replace('￥', '') || 0);
-  actualFee = toMoney(actualFee - redEnvelopeFee);
+  // var redEnvelopeFee = toMoney((((_rawOrder?.amount?.count?.[0]?.find(content => content?.content?.[0]?.data?.titleLink?.text?.includes("红包"))) || {})?.content?.[0]?.data?.money?.text)?.replace('￥', '') || 0);
+  // actualFee = toMoney(actualFee - redEnvelopeFee);
   order.actualFee = actualFee;
 
   var totalItemAmount = 0; // 用于计算所有子订单的总金额
@@ -992,7 +992,7 @@ function sourceName(_nickName) {
     return "洁红淘宝";
   } else if (_nickName.includes("fashion_suhj")) {
     return "淘宝2";
-  } else if (_nickName.includes("17324472089")) {
+  } else if (_nickName.includes("17324472089哈哈")) {
     return "淘宝3";
   } else if (_nickName.includes("tabao4windy")) {
     return "淘宝4";
