@@ -562,47 +562,111 @@
       alert("追评任务执行完毕");
     }
 
-    // --- UI 注入 ---
+    // --- [新增] 核心逻辑：服务评价 ---
+    async function doServiceEvaluate() {
+      const orderMain = document.getElementById("main");
+      // 寻找服务评价页面的订单行
+      const orderItems = orderMain.querySelectorAll(".mycomment-table tbody");
+      console.log(`【京东助手】开始服务评价处理，共 ${orderItems.length} 个订单项`);
+
+      for (let i = 0; i < orderItems.length; i++) {
+        const item = orderItems[i];
+        // 提取订单号
+        const orderIdNode = item.querySelector("span.number a");
+        if (!orderIdNode) continue;
+        const orderId = orderIdNode.innerText.trim();
+
+        // 提取 venderId (通常隐藏在“查看详情”链接或页面脚本中，如果找不到，尝试从页面元素获取)
+        // 这里的逻辑需要根据京东服务评价页面的具体 DOM 结构调整
+        // 常见方式是查找该行内的评价按钮链接中的参数
+        const evalBtn = item.querySelector("a[href*='venderId']");
+        let venderId = "";
+        if (evalBtn) {
+          venderId = evalBtn.href.match(/venderId=(\d+)/)?.[1] || "";
+        }
+
+        console.log(`[服务评价] 正在处理订单: ${orderId}, 店铺ID: ${venderId}`);
+
+        // 服务评价通常是一次性提交三个维度的评分
+        // 维度：1.卖家服务(ro1001) 2.仓储配送(ro1002) 3.物流速度(ro1003)
+        const serviceData = {
+          orderId: orderId,
+          venderId: venderId,
+          ro1001: "5", // 卖家服务 5分
+          ro1002: "5", // 仓储配送 5分
+          ro1003: "5", // 物流速度 5分
+          saveStatus: "1"
+        };
+
+        await new Promise(r => {
+          $.ajax({
+            url: "https://club.jd.com/myJdcomments/saveVenderRemark.action",
+            type: "POST",
+            data: serviceData,
+            contentType: "application/x-www-form-urlencoded; charset=GBK",
+            success: (res) => {
+              console.log(`[服务评价结果] 订单 ${orderId}:`, res);
+              r();
+            },
+            error: (err) => {
+              console.error(`[服务评价失败] 订单 ${orderId}`, err);
+              r();
+            }
+          });
+        });
+
+        await sleep(1200);
+      }
+      alert("服务评价任务执行完毕");
+    }
+
+    // --- UI 注入 (更新版，支持三个模式切换) ---
     const injectUI = () => {
       if (document.getElementById('jd-eval-container')) return;
 
-      const isAgain = window.location.search.includes('sort=3');
+      // 根据 URL 参数判断当前模式
+      const search = window.location.search;
+      let mode = "standard"; // 默认初评
+      if (search.includes('sort=3')) mode = "again"; // 追评
+      if (search.includes('s=4') || document.querySelector(".curr[href*='s=4']")) mode = "service"; // 服务评价
+
       const container = document.createElement('div');
       container.id = 'jd-eval-container';
       container.style = 'position: fixed; top: 120px; left: 10px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 12px; border: 2px solid #e1251b; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 160px;';
 
       const title = document.createElement('div');
-      title.innerText = isAgain ? '🚀 追评助手模式' : '🚀 初评助手模式';
+      const modeName = { "standard": "初评助手", "again": "追评助手", "service": "服务评价助手" };
+      title.innerText = `🚀 ${modeName[mode]}模式`;
       title.style = 'font-size: 13px; font-weight: bold; color: #e1251b; text-align: center; margin-bottom: 5px;';
       container.appendChild(title);
 
       const btn = document.createElement('button');
-      btn.innerText = isAgain ? '开始自动追评' : '开始自动初评';
+      btn.innerText = `开始自动${modeName[mode].replace('助手', '')}`;
       btn.style = `padding: 10px; border-radius: 4px; border: none; cursor: pointer; color: white; font-size: 13px; font-weight: bold; background: #e1251b;`;
 
       btn.onclick = async () => {
         btn.disabled = true;
-        btn.innerText = '任务执行中...';
-        btn.style.background = '#999';
-        if (isAgain) {
-          await doAgainEvaluate();
-        } else {
-          await doStandardEvaluate();
-        }
+        btn.innerText = '执行中...';
+        if (mode === "service") await doServiceEvaluate();
+        else if (mode === "again") await doAgainEvaluate();
+        else await doStandardEvaluate();
+
         btn.disabled = false;
-        btn.innerText = isAgain ? '开始自动追评' : '开始自动初评';
-        btn.style.background = '#e1251b';
+        btn.innerText = `开始自动${modeName[mode].replace('助手', '')}`;
       };
 
       container.appendChild(btn);
 
-      // 切换模式提示
-      const hint = document.createElement('div');
-      hint.innerHTML = isAgain ?
-        '<a href="?sort=0" style="color:blue; font-size:11px;">切换到初评列表</a>' :
-        '<a href="?sort=3" style="color:blue; font-size:11px;">切换到追评列表</a>';
-      hint.style = 'text-align: center; margin-top: 5px;';
-      container.appendChild(hint);
+      // 模式切换链接
+      const links = document.createElement('div');
+      links.style = 'text-align: center; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 11px;';
+      links.innerHTML = `
+      <a href="?sort=0" style="color:blue;">切换到初评列表</a>
+      <a href="?sort=3" style="color:blue;">切换到追评列表</a>
+      <a href="?s=4" style="color:blue;">切换到服务评价</a>
+    `;
+      container.appendChild(links);
+
       document.body.appendChild(container);
     };
 
