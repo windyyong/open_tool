@@ -628,7 +628,7 @@
       const search = window.location.search;
       let mode = "standard"; // 默认初评
       if (search.includes('sort=3')) mode = "again"; // 追评
-      if (search.includes('s=4') || document.querySelector(".curr[href*='s=4']")) mode = "service"; // 服务评价
+      if (search.includes('sort=4') || document.querySelector(".curr[href*='sort=4']")) mode = "service"; // 服务评价
 
       const container = document.createElement('div');
       container.id = 'jd-eval-container';
@@ -663,7 +663,7 @@
       links.innerHTML = `
       <a href="?sort=0" style="color:blue;">切换到初评列表</a>
       <a href="?sort=3" style="color:blue;">切换到追评列表</a>
-      <a href="?s=4" style="color:blue;">切换到服务评价</a>
+      <a href="?sort=4" style="color:blue;">切换到服务评价</a>
     `;
       container.appendChild(links);
 
