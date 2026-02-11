@@ -431,14 +431,15 @@
   if (location.host === 'club.jd.com') {
     // --- 配置数据 ---
     const comments = [
-      '比平时要便宜，囤了不少，特别特别满意 ，超级好看，客服很有礼貌，很客气，良心商家，支持!',
-      '挺好的，非常实用。京东的物流很快哟~希望以后会更快╭(╯3╰)╮',
-      '多快好省，京东给力。',
-      '质量非常好，很有质感，款式非常好，跟图片一样，穿上很好看，穿着也很舒服呢，很软，走路轻快。',
-      '尺码合适，穿着很舒服，百搭耐穿。穿着舒服，透气性能很好，柔软舒适。'
+      '这款商品价格比平时优惠很多，性价比超高，看到活动果断囤了好几件！实物和描述一致，颜值超高特别好看。客服态度热情有礼貌，回复及时又耐心，是真正的良心商家，整体购物体验超棒，强烈推荐，以后还会继续支持回购！',
+      '商品整体非常不错，设计实用，日常使用起来特别方便，性价比真的很高！最满意的还是京东物流，一如既往地快速高效，下单没多久就收到货了，包装完好无损。配送小哥服务也很好，希望平台继续保持，越做越好，太让人放心了！',
+      '一直在京东购物，真的特别省心省力！多快好省的体验名不虚传，下单后发货快、配送快，不用漫长等待。商品质量有保障，品质靠谱，售后也让人安心，不管是日常用品还是服饰鞋包都很满意，京东确实给力，值得信赖！',
+      '这件商品质量真的绝了，做工精细很有质感，款式时尚大气，和图片完全没有色差。上身后特别好看，版型正，穿着柔软舒服，不磨脚不压脚，走路轻松又轻快，长时间出门也不会累，不管是颜值还是舒适度都超出预期！',
+      '尺码标准特别合适，不用纠结大小，上脚立刻就能感受到舒服。款式百搭不挑人，日常穿搭都很合适，而且非常耐穿。透气性很好，不闷脚不出汗，材质柔软亲肤，做工细节都很到位，穿起来轻松自在，整体非常满意，推荐大家入手！'
     ];
-    const IMG_CLOTHING = "%2F%2Fimg30.360buyimg.com%2Fshaidan%2Fjfs%2Ft1%2F203880%2F18%2F46617%2F83803%2F6732ff59F09528191%2F5cc5e71f589f1d78.jpg%2C%2F%2Fimg30.360buyimg.com%2Fshaidan%2Fjfs%2Ft1%2F189478%2F14%2F52987%2F170468%2F6732ff79F63ab729f%2F10f075e737594a04.jpg";
-    const IMG_GENERAL = "%2F%2Fimg30.360buyimg.com%2Fshaidan%2Fjfs%2Ft1%2F227423%2F3%2F16375%2F171204%2F661e979fF9628e58a%2Fbf86877b06319d82.jpg%2C%2F%2Fimg30.360buyimg.com%2Fshaidan%2Fjfs%2Ft1%2F240310%2F17%2F7667%2F94737%2F661e97a3F56174b76%2F9698933ba0984152.jpg";
+
+    const IMG_CLOTHING = "//img30.360buyimg.com/shaidan/jfs/t1/203880/18/46617/83803/6732ff59F09528191/5cc5e71f589f1d78.jpg,//img30.360buyimg.com/shaidan/jfs/t1/189478/14/52987/170468/6732ff79F63ab729f/10f075e737594a04.jpg";
+    const IMG_GENERAL = "//img30.360buyimg.com/shaidan/jfs/t1/227423/3/16375/171204/661e979fF9628e58a/bf86877b06319d82.jpg,//img30.360buyimg.com/shaidan/jfs/t1/240310/17/7667/94737/661e97a3F56174b76/9698933ba0984152.jpg";
 
     // --- 工具函数 ---
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -480,11 +481,39 @@
           bodyStr += `&content=${getRandomComment()}`;
           bodyStr += `&imgs=${getProductType(pName) === 'clothing' ? IMG_CLOTHING : IMG_GENERAL}`;
 
+          // await new Promise(r => {
+          //   $.post("https://club.jd.com/myJdcomments/saveProductComment.action", bodyStr, (res) => {
+          //     console.log(`[初评结果] 商品 ${pId}:`, res);
+          //     r();
+          //   }, "json");
+          // });
+
+          // --- 核心：通过显式声明 scriptCharset 和 contentType 解决乱码 ---
+          const commentText = getRandomComment();
+          const imgs = getProductType(pName) === 'clothing' ? IMG_CLOTHING : IMG_GENERAL;
           await new Promise(r => {
-            $.post("https://club.jd.com/myJdcomments/saveProductComment.action", bodyStr, (res) => {
-              console.log(`[初评结果] 商品 ${pId}:`, res);
-              r();
-            }, "json");
+            $.ajax({
+              url: "https://club.jd.com/myJdcomments/saveProductComment.action",
+              type: "POST",
+              data: {
+                orderId: orderId,
+                productId: pId,
+                score: "5",
+                saveStatus: "2",
+                anonymousFlag: "1",
+                content: commentText,
+                imgs: imgs
+              },
+              contentType: "application/x-www-form-urlencoded; charset=GBK", // 强制声明编码
+              success: (res) => {
+                console.log(`[评价结果] 商品 ${pId}:`, res);
+                r();
+              },
+              error: (err) => {
+                console.error(`[评价失败] 商品 ${pId}`, err);
+                r();
+              }
+            });
           });
           await sleep(1000);
         }
