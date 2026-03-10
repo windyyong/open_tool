@@ -35,10 +35,10 @@ window.addEventListener('load', function () {
   // 加载完成后执行的代码
   if (orderListUrlRegExp.exec(document.URL)) {
     urlAddRouteTo(document.URL)
+    getNickName();
     addOrderListMenuComponent();
     orderListPage();
     handleXMLResult();
-    getNickName();
   } else if (taobaoDetailUrlRegExp.exec(document.URL)) {
     urlAddRouteTo(document.URL)
     getNickName();
@@ -443,7 +443,52 @@ function parseOrderListRawJson(_rawText) {
   dataText = dataText.replace(/\\"/g, '"');
   console.log("【当前订单数据数据】\n" + dataText)
   var ordersRaw = parseJSON(dataText);
-  return extractOrderListData(ordersRaw);
+  var orders=extractOrderListData(ordersRaw);
+
+  //粘贴所有订单数据到剪贴板
+  orderListToClipboard(orders);
+  return orders;
+}
+
+// 补全后的核心函数：将所有订单数据拼接并复制到剪贴板
+function orderListToClipboard(_orders) {
+  // 拼接所有订单的文本
+  var orderText = "";
+  console.log("sourceName:"+nickName);
+  //只获取前面10个
+  for (const order of _orders.slice(0, 10)) {
+    // 遍历当前订单的所有子订单
+    for (let i = 0; i < order.items.length; i++) {
+      const item = order.items[i];
+      // 按格式拼接：日期\t来源\t店铺\t订单号\t商品名\t规格\t码数\t价格\t数量\t空\t空\t物流\t状态\t仓库\n
+      orderText +=
+        order.createDay + "\t" +          // 下单日期
+        sourceName(nickName) + "\t" +    // 订单来源
+        order.shopName + "\t" +           // 店铺名称
+        order.orderNo + "\t" +            // 主订单号
+        item.name + "\t" +                // 商品名称（型号）
+        item.spec + "\t" +                // 规格（颜色）
+        item.size + "\t" +                // 码数/鞋码
+        order.actualFeePage + "\t" +       // 单价
+        item.quantity + "\t" +            // 数量
+        "\t" +                            // 空列1
+        "\t" +                            // 空列2
+        item.deliveryNo + "\t" +          // 物流单号
+        item.itemStatus + "\t" +          // 子订单状态
+        item.warehouse + "\n";            // 仓库名称
+    }
+  }
+
+  // 去除最后一行多余的换行，避免剪贴板末尾空行
+  orderText = orderText.trimEnd();
+
+  // 油猴复制到剪贴板（仅在油猴脚本环境生效）
+  if (orderText) {
+    GM_setClipboard(orderText);
+    console.log("订单数据已复制到剪贴板：\n", orderText);
+  } else {
+    console.warn("无订单数据可复制");
+  }
 }
 
 //抽取订单列表页面的订单数据
@@ -500,6 +545,7 @@ function extractOrderListData(_orders) {
   var orders = Object.values(orderMap)
   console.log("获取到的订单数据：" + jsonString(orders));
   setOrders(orders);
+
   return orders;
 }
 
