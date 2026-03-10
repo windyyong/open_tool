@@ -116,6 +116,8 @@ function warehouse(_address) {
     return '广州9999'
   } else if (_address.includes("临空北路100号") || (_address.includes("武汉") && _address.includes("横店"))) {
     return '武汉'
+  }  else if (_address.includes("空港物流园") || (_address.includes("武汉") && _address.includes("120"))) {
+    return '武汉120'
   } else if (_address.includes("彭封路333号")) {
     return '上海333'
   } else if (_address.includes("丰登路7777号")) {
@@ -130,6 +132,14 @@ function warehouse(_address) {
     return '西安'
   } else if (_address.includes("南六路1号") || (_address.includes("成都") && _address.includes("龙泉驿区"))) {
     return '成都'
+  } else if (_address.includes("贵州")) {
+    if (_address.includes("园区路1000号")) {
+      return '贵州1000'
+    }
+  }else if (_address.includes("海南")) {
+    if (_address.includes("一横路")) {
+      return '海南678'
+    }
   }
 }
 

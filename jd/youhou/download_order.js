@@ -114,6 +114,86 @@
     }
   }
 
+  /**
+   * 从商品名称中提取货号和码数（最终修复版：避免匹配年份/无效数字）
+   * @param {string} productName - 商品名称字符串
+   * @returns {object} { sku: 货号, size: 码数 } 无匹配时返回空字符串
+   */
+  function extractSkuAndSize(productName) {
+    if (!productName || typeof productName !== 'string') {
+      return { sku: '', size: '' };
+    }
+
+    // ===== 1. 提取货号 =====
+    const skuRegex = /([A-Za-z]{1,5}[\d\-]{2,9})(?:\s+\1)?\s*(\d+(\.\d+)?|[A-Z]+(\d+)?)?$/;
+    const skuMatch = productName.match(skuRegex);
+    let sku = '';
+    if (skuMatch && skuMatch[1]) {
+      sku = skuMatch[1].toUpperCase();
+    } else {
+      const fallbackSkuRegex = /[A-Za-z]{1,5}[\d\-]{2,9}/g;
+      const fallbackMatches = productName.match(fallbackSkuRegex);
+      sku = fallbackMatches ? fallbackMatches[fallbackMatches.length - 1].toUpperCase() : '';
+    }
+
+    // ===== 2. 提取码数（最终修复版）=====
+    // 核心优化：
+    // 1. 先过滤年份（4位数字）、货号，避免误匹配
+    // 2. 优先匹配字母型码数（衣物S/M/L/XL），再匹配数字型码数（鞋码）
+    // 3. 只取名称最后3个片段中的码数（码数通常在末尾）
+
+    // 步骤1：清理名称（去掉货号、4位年份、多余空格）
+    const cleanName = productName
+      .replace(new RegExp(sku, 'g'), '') // 去掉货号
+      .replace(/\b\d{4}\b/g, '') // 去掉4位年份（如2026、2025）
+      .replace(/\s+/g, ' ') // 合并多余空格
+      .trim();
+
+    // 步骤2：分割为片段，只取最后3个片段（码数几乎都在末尾）
+    const nameParts = cleanName.split(' ');
+    const lastParts = nameParts.slice(-3); // 取最后3个片段
+    const targetStr = lastParts.join(' ');
+
+    // 码数正则：
+    const sizeRegex = {
+      // 字母型码数（优先匹配）：S/M/L/XL/XXS/3XL 等
+      letter: /\b([1-9]?[XSML]+)\b/gi,
+      // 数字型码数：45、38.5、42.5 (270mm)（排除单独的4位数字）
+      number: /\b(?!\d{4}\b)(\d+(\.\d+)?)\s*(?:\(?\d*mm\)?)?\b/g
+    };
+
+    let size = '';
+
+    // 第一步：优先匹配字母型码数（解决S/M/L被年份覆盖的问题）
+    const letterMatches = targetStr.match(sizeRegex.letter);
+    if (letterMatches && letterMatches.length > 0) {
+      size = letterMatches[letterMatches.length - 1].toUpperCase().trim();
+    }
+    // 第二步：字母型匹配不到，再匹配数字型码数
+    else {
+      const numberMatches = targetStr.match(sizeRegex.number);
+      if (numberMatches && numberMatches.length > 0) {
+        size = numberMatches[numberMatches.length - 1]
+          .replace(/\s|\(|\)|mm/g, '')
+          .trim();
+      }
+    }
+
+    // 最终格式校验：确保码数是合法格式
+    const validSizeRegex = /^(?:\d+(\.\d+)?|[1-9]?[XSML]+)$/i;
+    if (size && !validSizeRegex.test(size)) {
+      size = '';
+    }
+
+    // 服务类商品特殊处理
+    if (productName.includes('京东养车') || productName.includes('服务')) {
+      sku = '';
+      size = '';
+    }
+
+    return { sku, size };
+  }
+
   function cleanStr(val) {
     if (!val) return "";
     return val.toString().replace(/,/g, "，").replace(/\n/g, " ").trim();
@@ -297,7 +377,6 @@
           if (backupLink) shopName = backupLink.getAttribute("title") || backupLink.innerText.trim();
         }
 
-        
         const totalAmount = parseFloat(tbody.querySelector(".amount span")?.innerText.replace(/[^\d.]/g, '') || "0");
         const orderStatus = tbody.querySelector(".order-status")?.innerText.trim() || "";
         const orderLink = tbody.querySelector(".status a[href*='details.jd.com']")?.href || "";
@@ -325,19 +404,28 @@
         pTemp.forEach(p => {
           const allocatedTotal = totalQty > 0 ? (totalAmount * (p.count / totalQty)) : 0;
           const avgCost = (allocatedTotal / p.count).toFixed(2);
-          const sizeMatch = p.name.match(/\s([A-Z0-9\/]+)$/i);
-          const size = sizeMatch ? sizeMatch[1] : "";
+          const skuAndSize=extractSkuAndSize(cleanStr(p.name));
+          const sku=skuAndSize.sku;
+          const size = skuAndSize.size;
 
           listData.push([
             orderTime, "京东1", cleanStr(shopName), `="${orderId}"`, cleanStr(p.name),
-            "", `="${size}"`, avgCost, p.count, "",
+            `="${sku}"`, `="${size}"`, avgCost, p.count, "",
             allocatedTotal.toFixed(2), "", cleanStr(orderStatus), warehouseName, "",
             "", size, "", avgCost, "",
             orderLink, p.link, cleanStr(addrPreview)
           ]);
         });
       });
-      if (listData.length > 0) saveToStore(listData);
+      if (listData.length > 0) {
+        // 只保存前15条到本地
+        const limitedListData = listData.slice(0, 15);
+        saveToStore(limitedListData);
+        // 复制前15条到剪贴板
+        const clipboardContent = limitedListData.map(row => row.join("\t")).join("\n");
+        GM_setClipboard(clipboardContent);
+        console.log(`列表页采集成功，仅保存并复制前 ${limitedListData.length} 件商品，已完成`);
+      };
     };
 
     const injectUI = () => {
@@ -423,8 +511,10 @@
     };
 
     scanListOrders();
+
+
     injectUI();
-    setInterval(scanListOrders, 5000);
+    setTimeout(scanListOrders, 5000);
   }
 
   // --- 逻辑：订单评价 --- https://club.jd.com/myJdcomments/myJdcomment.action?sort=3的url链接中没有参数sort=3为评价，有sort=3为追评
