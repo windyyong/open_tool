@@ -175,9 +175,11 @@ function addOrderListMenuComponent() {
   // addCheckbox(userMainListRow12, changeDelayStatus, "快照获取随机延时", "DelayStatus");
   // addCheckbox(userMainListRow13, changeSnapProductNameStatus, "快照商品名称获取", "SnapProductNameStatus");
 
-  addButton(userMainListRow2, cleanBlackList, "清空黑名单列表", "cleanBlackList");
+  // addButton(userMainListRow2, cleanBlackList, "清空黑名单列表", "cleanBlackList");
   addButton(userMainListRow2, resetBlackList, "重置黑名单列表", "resetBlackList");
   addButton(userMainListRow2, setBlackList, "设置黑名单列表", "setBlackList");
+  addButton(userMainListRow2, orderListToClipboard, "复制订单数据", "orderListToClipboard");
+
 
   addButton(userMainListRow3, cleanLocalData, "清空订单数据", "cleanOrdersList");
   addButton(userMainListRow3, exportOrdersList, "导出订单数据", "exportOrdersList");
@@ -446,17 +448,25 @@ function parseOrderListRawJson(_rawText) {
   var orders=extractOrderListData(ordersRaw);
 
   //粘贴所有订单数据到剪贴板
-  orderListToClipboard(orders);
   return orders;
 }
 
 // 补全后的核心函数：将所有订单数据拼接并复制到剪贴板
-function orderListToClipboard(_orders) {
+function orderListToClipboard() {
+  var orders=getOrders();
   // 拼接所有订单的文本
   var orderText = "";
-  console.log("sourceName:"+nickName);
+  orders = orders.sort((a, b) => {
+    // 比较时间，按时间倒序排序
+    const timeDiff = new Date(b.createTime) - new Date(a.createTime);
+    if (timeDiff !== 0) {
+      return timeDiff;
+    }
+    // 如果时间相同，按订单号升序排序
+    return a.orderNo.localeCompare(b.orderNo);
+  });
   //只获取前面10个
-  for (const order of _orders.slice(0, 10)) {
+  for (const order of orders.slice(0, 10)) {
     // 遍历当前订单的所有子订单
     for (let i = 0; i < order.items.length; i++) {
       const item = order.items[i];
